@@ -72,88 +72,6 @@ press1_5bar = days_data[9].iloc[26500:37000]
 press2bar = days_data[9].iloc[14900:25700]
 press2_5bar = days_data[9].iloc[4700:14300]
 extraCase = days_data[10].iloc[650:4350] #day 11 is with lambda equal to 1 and saturated both sides to 70C
-
-#%%
-variables = [
-    ('baseCase', baseCase),
-    ('T= 30 C', temp30C),
-    ('T = 50 C', temp50C),
-    ('T = 70 C', temp70C),
-    ('T = 90 C', temp90C),
-    ('RH = 25%', relHum25),
-    ('RH = 50%', relHum50),
-    ('RH = 75%', relHum75),
-    ('RH = 100%', relHum100),
-    ('P = 1.5 bar', press1_5bar),
-    ('P = 2 bar', press2bar),
-    ('P = 2.5 bar', press2_5bar),
-    ('extraCase', extraCase)
-]
-
-plt.figure(figsize=(12, 8))
-for name, data in variables:
-    plt.scatter(data['current'], data['voltage'], label=name)
-plt.xlabel('Current (A)')
-plt.ylabel('Voltage (V)')
-plt.legend()
-plt.title('All Cases: Voltage vs Current')
-plt.show()
-#%%
-#%%
-threshold = 0.01  # Change threshold as needed
-
-plt.figure(figsize=(12, 8))
-for name, data in variables:
-    mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
-    plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
-plt.xlabel('Current (A)')
-plt.ylabel('Voltage (V)')
-plt.title(f'Polarization Curves (ΔV={threshold}V) for All Cases')
-plt.legend()
-plt.grid(True)
-plt.show()
-
-#%%
-plt.figure(figsize=(10, 6))
-plt.scatter(baseCase['current'], baseCase['voltage'], label='day 1')
-plt.xlabel('Current (A)') 
-plt.ylabel('Voltage (V)')
-plt.legend()
-plt.show()
-
-#%%
-
-plt.figure(figsize=(10, 6))
-for i, day_data in enumerate(days_data):
-    plt.plot(day_data['voltage'], label=f'Day {i+1}')
-plt.xlabel('Time (s)')
-plt.ylabel('Voltage (V)')
-plt.legend()
-plt.show()
-#%%
-#%%
-threshold = 0.01  # Use your desired threshold
-
-plt.figure(figsize=(12, 8))
-for name, data in variables:
-    mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
-    plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
-    # Add arrows to show direction
-    for i in range(len(mean_currents) - 1):
-        plt.annotate(
-            '', 
-            xy=(mean_currents[i+1], mean_voltages[i+1]), 
-            xytext=(mean_currents[i], mean_voltages[i]),
-            arrowprops=dict(arrowstyle='->', color=plt.gca().lines[-1].get_color(), lw=1)
-        )
-plt.xlabel('Current (A)')
-plt.ylabel('Voltage (V)')
-plt.title(f'Polarization Curves (ΔV={threshold}V) with Direction Arrows')
-plt.legend()
-plt.grid(True)
-plt.show()
-
-#%%
 #%%
 threshold = 0.01  # Use your desired threshold
 
@@ -186,7 +104,7 @@ groups = {
 }
 
 for group_name, group_vars in groups.items():
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(7, 3.5))
     for name, data in group_vars:
         mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
         plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
@@ -198,14 +116,53 @@ for group_name, group_vars in groups.items():
                 xytext=(mean_currents[i], mean_voltages[i]),
                 arrowprops=dict(arrowstyle='->', color=plt.gca().lines[-1].get_color(), lw=1)
             )
-    plt.xlabel('Current (A)')
+    plt.xlabel(r'Current (A)',size=10)
     plt.ylabel('Voltage (V)')
-    plt.title(f'{group_name} Polarization Curves (ΔV={threshold}V) with Direction Arrows')
+    plt.x(size=8,minor=True)
+    plt.title('Polarization Curves')
     plt.legend()
-    plt.grid(True)
+    plt.grid(True,which='both', linestyle='--', linewidth=0.5)
     plt.show()
-
-
 #%%
-mean_voltages, mean_currents = mean_groups_by_voltage_change(temp50C, threshold=threshold)
-plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
+import matplotlib.ticker as ticker
+# ...existing code...
+
+for group_name, group_vars in groups.items():
+    plt.figure(figsize=(7, 3.5))
+    for name, data in group_vars:
+        mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
+        plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
+        for i in range(len(mean_currents) - 1):
+            plt.annotate(
+                '',
+                xy=(mean_currents[i+1], mean_voltages[i+1]),
+                xytext=(mean_currents[i], mean_voltages[i]),
+                arrowprops=dict(arrowstyle='->', color=plt.gca().lines[-1].get_color(), lw=1)
+            )
+    plt.xlabel(r'Current (A)', size=10)
+    plt.ylabel('Voltage (V)')
+    plt.title('Polarization Curves')
+    plt.legend()
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.5))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.05))
+    plt.show()
+#%%
+import csv
+
+output_folder = "output_data"
+os.makedirs(output_folder, exist_ok=True)
+
+for group_name, group_vars in groups.items():
+    for name, data in group_vars:
+        # Save raw data
+        raw_df = pd.DataFrame({'voltage': data['voltage'], 'current': data['current']})
+        raw_df.to_csv(f"{output_folder}/{group_name}_{name}_raw.csv", index=False)
+        
+        # Save mean values
+        mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
+        mean_df = pd.DataFrame({'mean_voltage': mean_voltages, 'mean_current': mean_currents})
+        mean_df.to_csv(f"{output_folder}/{group_name}_{name}_mean.csv", index=False)
