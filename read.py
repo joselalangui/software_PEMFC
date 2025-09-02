@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-import re
 
 def read_csv(file_path):
     """Reads a CSV file and returns a pandas DataFrame."""
@@ -42,6 +41,56 @@ powerCharge_paths = [get_txt_file_from_folder(os.path.join('organized_by_date', 
 
 days_data = [read_txt(path) for path in powerCharge_paths] #day 0 is when i humidify the membrane
 
+#%%
+baseCase = days_data[1].iloc[600:11400]
+temp30C = days_data[2].iloc[6100:19600]
+temp50C = days_data[3].iloc[10000:21900]
+temp70C = days_data[3].iloc[39300:50900]
+temp90C = days_data[4].iloc[800:12600]
+relHum25 = days_data[5].iloc[10500:26500]
+relHum50 = days_data[6].iloc[4600:19400]
+relHum75 = days_data[7].iloc[6400:18100]
+relHum100 = days_data[7].iloc[31100:41900]
+press1_5bar = days_data[9].iloc[26500:37000]
+press2bar = days_data[9].iloc[14900:25700]
+press2_5bar = days_data[9].iloc[4700:14300]
+extraCase = days_data[10].iloc[650:4350] #day 11 is with lambda equal to 1 and saturated both sides to 70C
+#%%
+#%%
+variables = [
+    ('baseCase', baseCase),
+    ('temp30C', temp30C),
+    ('temp50C', temp50C),
+    ('temp70C', temp70C),
+    ('temp90C', temp90C),
+    ('relHum25', relHum25),
+    ('relHum50', relHum50),
+    ('relHum75', relHum75),
+    ('relHum100', relHum100),
+    ('press1_5bar', press1_5bar),
+    ('press2bar', press2bar),
+    ('press2_5bar', press2_5bar),
+    ('extraCase', extraCase)
+]
+
+plt.figure(figsize=(12, 8))
+for name, data in variables:
+    plt.scatter(data['current'], data['voltage'], label=name)
+plt.xlabel('Current (A)')
+plt.ylabel('Voltage (V)')
+plt.legend()
+plt.title('All Cases: Voltage vs Current')
+plt.show()
+#%%
+plt.figure(figsize=(10, 6))
+plt.scatter(baseCase['current'], baseCase['voltage'], label='day 1')
+plt.xlabel('Current (A)') 
+plt.ylabel('Voltage (V)')
+plt.legend()
+plt.show()
+
+#%%
+
 plt.figure(figsize=(10, 6))
 for i, day_data in enumerate(days_data):
     plt.plot(day_data['voltage'], label=f'Day {i+1}')
@@ -58,25 +107,6 @@ for i, day_data in enumerate(days_data):
 plt.xlabel('Current (A)')
 plt.ylabel('Voltage (V)')
 plt.legend()
-plt.show()
-
-
-#%%
-baseCase = firstDay.iloc[0:3600]
-plt.plot(firstDay['voltage'], label='17_06_2025')
-plt.plot(baseCase['voltage'])
-plt.xlabel('Time (s)')
-plt.ylabel('Voltage (V)')
-plt.show()
-#%%
-plt.plot(firstDay['voltage'], label='17_06_2025')
-plt.plot(secondDay['voltage'], label='18_06_2025')
-plt.plot(thirdDay['voltage'], label='26_06_2025')
-plt.plot(fourthDay['voltage'], label='30_06_2025')
-plt.plot(fifthDay['voltage'], label='01_07_2025')
-plt.plot(sixthDay['voltage'], label='02_  07_2025')
-plt.xlabel('Time (s)')
-plt.ylabel('Voltage (V)')
 plt.show()
 
 
