@@ -33,6 +33,23 @@ def get_month_folders(parent_folder, months=('2025-06', '2025-07')):
     ]
     return [os.path.join(folder_path, f) for f in folders]
 
+
+def mean_groups_by_voltage_change(data, threshold=0.1):
+    voltage = data['voltage'].values
+    current = data['current'].values
+    groups = []
+    start = 0
+    for i in range(1, len(voltage)):
+        if abs(voltage[i] - voltage[start]) >= threshold:
+            groups.append((voltage[start:i], current[start:i]))
+            start = i
+    # Add last group
+    if start < len(voltage):
+        groups.append((voltage[start:], current[start:]))
+    mean_voltages = [np.mean(v) for v, _ in groups if len(v) > 0]
+    mean_currents = [np.mean(c) for _, c in groups if len(c) > 0]
+    return mean_voltages, mean_currents
+
 # Example usage:
 month_folders = get_month_folders('organized_by_date', months=('2025-06', '2025-07'))
 
@@ -55,21 +72,21 @@ press1_5bar = days_data[9].iloc[26500:37000]
 press2bar = days_data[9].iloc[14900:25700]
 press2_5bar = days_data[9].iloc[4700:14300]
 extraCase = days_data[10].iloc[650:4350] #day 11 is with lambda equal to 1 and saturated both sides to 70C
-#%%
+
 #%%
 variables = [
     ('baseCase', baseCase),
-    ('temp30C', temp30C),
-    ('temp50C', temp50C),
-    ('temp70C', temp70C),
-    ('temp90C', temp90C),
-    ('relHum25', relHum25),
-    ('relHum50', relHum50),
-    ('relHum75', relHum75),
-    ('relHum100', relHum100),
-    ('press1_5bar', press1_5bar),
-    ('press2bar', press2bar),
-    ('press2_5bar', press2_5bar),
+    ('T= 30 C', temp30C),
+    ('T = 50 C', temp50C),
+    ('T = 70 C', temp70C),
+    ('T = 90 C', temp90C),
+    ('RH = 25%', relHum25),
+    ('RH = 50%', relHum50),
+    ('RH = 75%', relHum75),
+    ('RH = 100%', relHum100),
+    ('P = 1.5 bar', press1_5bar),
+    ('P = 2 bar', press2bar),
+    ('P = 2.5 bar', press2_5bar),
     ('extraCase', extraCase)
 ]
 
@@ -81,6 +98,21 @@ plt.ylabel('Voltage (V)')
 plt.legend()
 plt.title('All Cases: Voltage vs Current')
 plt.show()
+#%%
+#%%
+threshold = 0.01  # Change threshold as needed
+
+plt.figure(figsize=(12, 8))
+for name, data in variables:
+    mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
+    plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
+plt.xlabel('Current (A)')
+plt.ylabel('Voltage (V)')
+plt.title(f'Polarization Curves (ΔV={threshold}V) for All Cases')
+plt.legend()
+plt.grid(True)
+plt.show()
+
 #%%
 plt.figure(figsize=(10, 6))
 plt.scatter(baseCase['current'], baseCase['voltage'], label='day 1')
@@ -99,14 +131,81 @@ plt.ylabel('Voltage (V)')
 plt.legend()
 plt.show()
 #%%
-plt.figure(figsize=(10, 6))
-for i, day_data in enumerate(days_data):
-    plt.scatter(day_data['current'],day_data['voltage'], label=f'Day {i+1}')
-#plt.scatter(days_data[1]['current'], days_data[1]['voltage'], label='Day 1')
-#plt.scatter(days_data[4]['current'], days_data[4]['voltage'], label='Day 4')
+#%%
+threshold = 0.01  # Use your desired threshold
+
+plt.figure(figsize=(12, 8))
+for name, data in variables:
+    mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
+    plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
+    # Add arrows to show direction
+    for i in range(len(mean_currents) - 1):
+        plt.annotate(
+            '', 
+            xy=(mean_currents[i+1], mean_voltages[i+1]), 
+            xytext=(mean_currents[i], mean_voltages[i]),
+            arrowprops=dict(arrowstyle='->', color=plt.gca().lines[-1].get_color(), lw=1)
+        )
 plt.xlabel('Current (A)')
 plt.ylabel('Voltage (V)')
+plt.title(f'Polarization Curves (ΔV={threshold}V) with Direction Arrows')
 plt.legend()
+plt.grid(True)
 plt.show()
 
+#%%
+#%%
+threshold = 0.01  # Use your desired threshold
 
+# Define groups (always include baseCase)
+groups = {
+    'Temperature': [
+        ('baseCase', baseCase),
+        ('T = 30 C', temp30C),
+        ('T = 50 C', temp50C),
+        ('T = 70 C', temp70C),
+        ('T = 90 C', temp90C)
+    ],
+    'Relative Humidity': [
+        ('baseCase', baseCase),
+        ('RH = 25%', relHum25),
+        ('RH = 50%', relHum50),
+        ('RH = 75%', relHum75),
+        ('RH = 100%', relHum100)
+    ],
+    'Pressure': [
+        ('baseCase', baseCase),
+        ('P = 1.5 bar', press1_5bar),
+        ('P = 2 bar', press2bar),
+        ('P = 2.5 bar', press2_5bar)
+    ],
+    'Extra': [
+        ('baseCase', baseCase),
+        ('extraCase', extraCase)
+    ]
+}
+
+for group_name, group_vars in groups.items():
+    plt.figure(figsize=(10, 6))
+    for name, data in group_vars:
+        mean_voltages, mean_currents = mean_groups_by_voltage_change(data, threshold=threshold)
+        plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
+        # Add arrows to show direction
+        for i in range(len(mean_currents) - 1):
+            plt.annotate(
+                '',
+                xy=(mean_currents[i+1], mean_voltages[i+1]),
+                xytext=(mean_currents[i], mean_voltages[i]),
+                arrowprops=dict(arrowstyle='->', color=plt.gca().lines[-1].get_color(), lw=1)
+            )
+    plt.xlabel('Current (A)')
+    plt.ylabel('Voltage (V)')
+    plt.title(f'{group_name} Polarization Curves (ΔV={threshold}V) with Direction Arrows')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+#%%
+mean_voltages, mean_currents = mean_groups_by_voltage_change(temp50C, threshold=threshold)
+plt.plot(mean_currents, mean_voltages, marker='o', linestyle='-', label=name)
